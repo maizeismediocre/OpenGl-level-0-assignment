@@ -15,11 +15,14 @@ using namespace _3dgl;
 using namespace glm;
 
 // 3D models
-C3dglModel camera;
-
+C3dglModel table;
+C3dglModel chair;
+C3dglModel teapot;
+C3dglModel Vase;
 // The View Matrix
 mat4 matrixView;
-
+// GLSL programs
+C3dglProgram program;
 // Camera & navigation
 float maxspeed = 4.f;	// camera max speed
 float accel = 4.f;		// camera acceleration
@@ -28,6 +31,34 @@ float _fov = 60.f;		// field of view (zoom)
 
 bool init()
 {
+	C3dglShader vertexShader;
+
+	C3dglShader fragmentShader;
+
+
+	if (!vertexShader.create(GL_VERTEX_SHADER)) return false;
+
+	if (!vertexShader.loadFromFile("shaders/basic.vert")) return false;
+
+	if (!vertexShader.compile()) return false;
+
+
+	if (!fragmentShader.create(GL_FRAGMENT_SHADER)) return false;
+
+	if (!fragmentShader.loadFromFile("shaders/basic.frag")) return false;
+
+	if (!fragmentShader.compile()) return false;
+
+
+	if (!program.create()) return false;
+
+	if (!program.attach(vertexShader)) return false;
+
+	if (!program.attach(fragmentShader)) return false;
+
+	if (!program.link()) return false;
+
+	if (!program.use(true)) return false;
 	// rendering states
 	glEnable(GL_DEPTH_TEST);	// depth test is necessary for most 3D scenes
 	glEnable(GL_NORMALIZE);		// normalization is needed by AssImp library models
@@ -35,12 +66,13 @@ bool init()
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);	// this is the default one; try GL_LINE!
 
 	// setup lighting
-	glEnable(GL_LIGHTING);									// --- DEPRECATED
-	glEnable(GL_LIGHT0);									// --- DEPRECATED
+	
 
 	// load your 3D models here!
-	if (!camera.load("models\\camera.3ds")) return false;
-
+	if (!table.load("models\\table.obj")) return false;
+	if (!chair.load("models\\table.obj")) return false;
+	if (!teapot.load("models\\utah_teapot_ultrares.obj")) return false;
+	if (!Vase.load("models\\vase.obj")) return false;
 	// Initialise the View Matrix (initial position of the camera)
 	matrixView = rotate(mat4(1), radians(12.f), vec3(1, 0, 0));
 	matrixView *= lookAt(
@@ -67,31 +99,47 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	mat4 m;
 
 	// setup materials - grey
-	GLfloat rgbaGrey[] = { 0.6f, 0.6f, 0.6f, 1.0f };		// --- DEPRECATED
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, rgbaGrey);	// --- DEPRECATED
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, rgbaGrey);	// --- DEPRECATED
+	program.sendUniform("material", vec3(0.6f, 0.6f, 0.6f));
 
-	// camera
+	// table
 	m = matrixView;
-	m = translate(m, vec3(-3.0f, 0, 0.0f));
+	m = translate(m, vec3(0.0f, 0, 0.0f));
 	m = rotate(m, radians(180.f), vec3(0.0f, 1.0f, 0.0f));
-	m = scale(m, vec3(0.04f, 0.04f, 0.04f));
-	camera.render(m);
+	m = scale(m, vec3(0.004f, 0.004f, 0.004f));
+	table.render(m);
 
-	// setup materials - blue
-	GLfloat rgbaBlue[] = { 0.2f, 0.2f, 0.8f, 1.0f };		// --- DEPRECATED
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, rgbaBlue);	// --- DEPRECATED
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, rgbaBlue);	// --- DEPRECATED
+	
 
 	// teapot
 	m = matrixView;
-	m = translate(m, vec3(15.0f, 0, 0.0f));
+	m = translate(m, vec3(2.0f, 3.0f, 0.0f));
 	m = rotate(m, radians(120.f), vec3(0.0f, 1.0f, 0.0f));
-	// the GLUT objects require the Model View Matrix setup
-	glMatrixMode(GL_MODELVIEW);								// --- DEPRECATED
-	glLoadIdentity();										// --- DEPRECATED
-	glMultMatrixf((GLfloat*)&m);							// --- DEPRECATED
-	glutSolidTeapot(2.0);
+	m = scale(m, vec3(0.5f, 0.5f, 0.5f));
+	teapot.render(m);
+	// chair 1
+	m = matrixView;
+	m = translate(m, vec3(0.0f, 0, 0.0f));
+	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
+	m = scale(m, vec3(0.004f, 0.004f, 0.004f));
+	chair.render(0,m);
+	// chair 2
+	m = matrixView;
+	m = translate(m, vec3(0.0f, 0, 0.0f));
+	m = rotate(m, radians(90.0f), vec3(0.0f, 1.0f, 0.0f));
+	m = scale(m, vec3(0.004f, 0.004f, 0.004f));
+	chair.render(0, m);
+	// chair 3
+	m = matrixView;
+	m = translate(m, vec3(0.0f, 0, 0.0f));
+	m = rotate(m, radians(270.0f), vec3(0.0f, 1.0f, 0.0f));
+	m = scale(m, vec3(0.004f, 0.004f, 0.004f));
+	chair.render(0, m);
+	// vase
+	m = matrixView;
+	m = translate(m, vec3(0.0f, 3.0f, 0.0f));
+	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
+	m = scale(m, vec3(0.05f, 0.05f, 0.05f));
+	Vase.render(m);
 }
 
 void onRender()
@@ -132,9 +180,7 @@ void onReshape(int w, int h)
 	mat4 matrixProjection = perspective(radians(_fov), ratio, 0.02f, 1000.f);
 
 	// Setup the Projection Matrix
-	glMatrixMode(GL_PROJECTION);							// --- DEPRECATED
-	glLoadIdentity();										// --- DEPRECATED
-	glMultMatrixf((GLfloat*)&matrixProjection);				// --- DEPRECATED
+	program.sendUniform("matrixProjection", matrixProjection);
 }
 
 // Handle WASDQE keys
