@@ -155,8 +155,7 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 {
 	mat4 m;
 	
-	// set up materials - green 
-	program.sendUniform("material", vec3(0.1f, 0.6f, 0.1f));
+	
 
 	// Get Attribute Locations
 
@@ -184,7 +183,14 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
 
 	glVertexAttribPointer(attribNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
+	
+	// Apply scaling transformation to the pyramid
+	m = matrixView;
+	m = scale(m, vec3(0.05f, 0.05f, 0.05f)); 
+	m = translate(m, vec3(0.0f, 67.0f, 0.0f));
+	m = rotate(m, radians(180.0f), vec3(0.0f, 0.0f, 1.0f));
+	// Send the model-view matrix to the shader
+	program.sendUniform("matrixModelView", m);
 
 	// Draw triangles – using index buffer
 
@@ -251,8 +257,10 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	m = scale(m, vec3(0.05f, 0.05f, 0.05f));
 	Vase.render(m);
 
-	program.sendUniform("matrixModelView", m);
+	program.sendUniform("material", vec3(0.1f, 0.6f, 0.1f));
+	program.sendUniform("matrixModelView", matrixView);
 	
+
 }
 
 void onRender()
