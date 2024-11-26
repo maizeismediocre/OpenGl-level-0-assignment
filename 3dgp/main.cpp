@@ -51,6 +51,7 @@ C3dglModel table;
 C3dglModel chair;
 C3dglModel teapot;
 C3dglModel Vase;
+C3dglModel Figure; 
 // The View Matrix
 mat4 matrixView;
 // GLSL programs
@@ -130,6 +131,7 @@ bool init()
 	if (!chair.load("models\\table.obj")) return false;
 	if (!teapot.load("models\\utah_teapot_ultrares.obj")) return false;
 	if (!Vase.load("models\\vase.obj")) return false;
+	if (!Figure.load("models\\figure.fbx")) return false;
 	// Initialise the View Matrix (initial position of the camera)
 	matrixView = rotate(mat4(1), radians(12.f), vec3(1, 0, 0));
 	matrixView *= lookAt(
@@ -189,6 +191,7 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	m = scale(m, vec3(0.05f, 0.05f, 0.05f)); 
 	m = translate(m, vec3(0.0f, 67.0f, 0.0f));
 	m = rotate(m, radians(180.0f), vec3(0.0f, 0.0f, 1.0f));
+	m = rotate(m, time, vec3(0.0f, 1.0f, 0.0f));
 	// Send the model-view matrix to the shader
 	program.sendUniform("matrixModelView", m);
 
@@ -205,11 +208,11 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 
 	glDisableVertexAttribArray(attribNormal);
 
-	
+	// set up materials brown
+	program.sendUniform("material", vec3(0.6f, 0.3f, 0.1f));
 	
 
-	// setup materials - grey
-	program.sendUniform("material", vec3(0.6f, 0.6f, 0.6f));
+	
 	
 	// table
 	m = matrixView;
@@ -256,7 +259,12 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
 	m = scale(m, vec3(0.05f, 0.05f, 0.05f));
 	Vase.render(m);
-
+	// figure 
+	m = matrixView;
+	m = translate(m, vec3(0.0f,3.33f, 0.0f));
+	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
+	m = scale(m, vec3(0.05f, 0.05f, 0.05f));
+	Figure.render(m);
 	program.sendUniform("material", vec3(0.1f, 0.6f, 0.1f));
 	program.sendUniform("matrixModelView", matrixView);
 	

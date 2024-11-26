@@ -17,7 +17,7 @@ void main(void)
   gl_Position = pos;
 
   vec4 lightdir = vec4(1.0, 0.5, 1.0, 0.0);
-  vec4 ambient = vec4(0.2, 0.2, 0.2, 1.0);
+  vec4 ambient = vec4(0.1, 0.1, 0.1, 0.5);
 
   vec3 N = normalize(mat3(matrixModelView) * aNormal);
   vec3 L = normalize(lightdir).xyz;
