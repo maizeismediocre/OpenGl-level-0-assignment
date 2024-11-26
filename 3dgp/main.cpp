@@ -14,6 +14,31 @@ using namespace std;
 using namespace _3dgl;
 using namespace glm;
 
+
+// Buffers
+unsigned buf, ind;
+
+// Vertex Data:
+float vertices[] = {
+  -4, 0,-4, 0, 4,-7, 4, 0,-4, 0, 4,-7, 0, 7, 0, 0, 4,-7,
+  -4, 0, 4, 0, 4, 7, 4, 0, 4, 0, 4, 7, 0, 7, 0, 0, 4, 7,
+  -4, 0,-4,-7, 4, 0,-4, 0, 4,-7, 4, 0, 0, 7, 0,-7, 4, 0,
+   4, 0,-4, 7, 4, 0, 4, 0, 4, 7, 4, 0, 0, 7, 0, 7, 4, 0,
+  -4, 0,-4, 0,-1, 0,-4, 0, 4, 0,-1, 0, 4, 0,-4, 0,-1, 0,
+   4, 0, 4, 0,-1, 0 };
+
+// Index Data
+unsigned indices[] = {
+  0, 1, 2,	  // side triangle
+  3, 4, 5,	  // side triangle
+  6, 7, 8,	  // side triangle
+  9, 10, 11,	  // side triangle
+  12, 13, 14,	  // one of the base triangles
+  13, 14, 15 };	  // the other one reuses two out of the three vertices
+
+
+
+
 // 3D models
 C3dglModel table;
 C3dglModel chair;
@@ -65,7 +90,16 @@ bool init()
 	glShadeModel(GL_SMOOTH);	// smooth shading mode is the default one; try GL_FLAT here!
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);	// this is the default one; try GL_LINE!
 
-	// setup lighting
+	// prepare vertex array
+	glGenBuffers(1, &buf);
+	glBindBuffer(GL_ARRAY_BUFFER, buf);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// prepare indices array
+	glGenBuffers(1, &ind);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ind);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
 	
 
 	// load your 3D models here!
@@ -96,6 +130,25 @@ bool init()
 
 void renderScene(mat4& matrixView, float time, float deltaTime)
 {
+	// set up materials - green 
+	program.sendUniform("material", vec3(0.1f, 0.6f, 0.1f));
+	// Bind (activate) the buffer
+	glBindBuffer(GL_ARRAY_BUFFER, buf);
+
+	// render nearly as usually
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glEnableClientState(GL_NORMAL_ARRAY);
+	glVertexPointer(3, GL_FLOAT, 6 * sizeof(float), 0);
+	glNormalPointer(GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+
+	// Bind (activate) index buffer
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ind);
+	// Draw triangles using 18 indices (unsigned int), starting at number 0
+	glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
+
+	glDisableClientState(GL_VERTEX_ARRAY);
+	glDisableClientState(GL_NORMAL_ARRAY);
+	
 	mat4 m;
 
 	// setup materials - grey
@@ -108,20 +161,16 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	m = scale(m, vec3(0.004f, 0.004f, 0.004f));
 	table.render(m);
 
-	
 
-	// teapot
-	m = matrixView;
-	m = translate(m, vec3(2.0f, 3.0f, 0.0f));
-	m = rotate(m, radians(120.f), vec3(0.0f, 1.0f, 0.0f));
-	m = scale(m, vec3(0.5f, 0.5f, 0.5f));
-	teapot.render(m);
+
+
+
 	// chair 1
 	m = matrixView;
 	m = translate(m, vec3(0.0f, 0, 0.0f));
 	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
 	m = scale(m, vec3(0.004f, 0.004f, 0.004f));
-	chair.render(0,m);
+	chair.render(0, m);
 	// chair 2
 	m = matrixView;
 	m = translate(m, vec3(0.0f, 0, 0.0f));
@@ -134,12 +183,23 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	m = rotate(m, radians(270.0f), vec3(0.0f, 1.0f, 0.0f));
 	m = scale(m, vec3(0.004f, 0.004f, 0.004f));
 	chair.render(0, m);
+	// set up materials - blue
+	program.sendUniform("material", vec3(0.1f, 0.1f, 0.6f));
+	// teapot
+	m = matrixView;
+	m = translate(m, vec3(2.0f, 3.0f, 0.0f));
+	m = rotate(m, radians(120.f), vec3(0.0f, 1.0f, 0.0f));
+	m = scale(m, vec3(0.5f, 0.5f, 0.5f));
+	teapot.render(m);
+	// set up materials - red 
+	program.sendUniform("material", vec3(0.6f, 0.1f, 0.1f));
 	// vase
 	m = matrixView;
-	m = translate(m, vec3(0.0f, 3.0f, 0.0f));
+	m = translate(m, vec3(-2.0f, 3.0f, 0.0f));
 	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
 	m = scale(m, vec3(0.05f, 0.05f, 0.05f));
 	Vase.render(m);
+	
 }
 
 void onRender()
