@@ -14,27 +14,34 @@ using namespace std;
 using namespace _3dgl;
 using namespace glm;
 
-
-// Buffers
-unsigned buf, ind;
-
-// Vertex Data:
 float vertices[] = {
-  -4, 0,-4, 0, 4,-7, 4, 0,-4, 0, 4,-7, 0, 7, 0, 0, 4,-7,
-  -4, 0, 4, 0, 4, 7, 4, 0, 4, 0, 4, 7, 0, 7, 0, 0, 4, 7,
-  -4, 0,-4,-7, 4, 0,-4, 0, 4,-7, 4, 0, 0, 7, 0,-7, 4, 0,
-   4, 0,-4, 7, 4, 0, 4, 0, 4, 7, 4, 0, 0, 7, 0, 7, 4, 0,
-  -4, 0,-4, 0,-1, 0,-4, 0, 4, 0,-1, 0, 4, 0,-4, 0,-1, 0,
-   4, 0, 4, 0,-1, 0 };
 
-// Index Data
+-4, 0, -4, 4, 0, -4, 0, 7, 0, -4, 0, 4, 4, 0, 4, 0, 7, 0,
+
+-4, 0, -4, -4, 0, 4, 0, 7, 0, 4, 0, -4, 4, 0, 4, 0, 7, 0,
+
+-4, 0, -4, -4, 0, 4, 4, 0, -4, 4, 0, 4 };
+
+float normals[] = {
+
+0, 4, -7, 0, 4, -7, 0, 4, -7, 0, 4, 7, 0, 4, 7, 0, 4, 7,
+
+-7, 4, 0, -7, 4, 0, -7, 4, 0, 7, 4, 0, 7, 4, 0, 7, 4, 0,
+
+0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0 };
+
 unsigned indices[] = {
-  0, 1, 2,	  // side triangle
-  3, 4, 5,	  // side triangle
-  6, 7, 8,	  // side triangle
-  9, 10, 11,	  // side triangle
-  12, 13, 14,	  // one of the base triangles
-  13, 14, 15 };	  // the other one reuses two out of the three vertices
+
+0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 13, 14, 15 };
+
+
+// buffers names
+
+unsigned vertexBuffer = 0;
+
+unsigned normalBuffer = 0;
+
+unsigned indexBuffer = 0;	
 
 
 
@@ -90,15 +97,31 @@ bool init()
 	glShadeModel(GL_SMOOTH);	// smooth shading mode is the default one; try GL_FLAT here!
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);	// this is the default one; try GL_LINE!
 
-	// prepare vertex array
-	glGenBuffers(1, &buf);
-	glBindBuffer(GL_ARRAY_BUFFER, buf);
+	// prepare vertex data
+
+	glGenBuffers(1, &vertexBuffer);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
+
+	// prepare normal data
+
+	glGenBuffers(1, &normalBuffer);
+
+	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+
+	glBufferData(GL_ARRAY_BUFFER, sizeof(normals), normals, GL_STATIC_DRAW);
+
+
 	// prepare indices array
-	glGenBuffers(1, &ind);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ind);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &indexBuffer);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);            
 
 	
 
@@ -130,30 +153,58 @@ bool init()
 
 void renderScene(mat4& matrixView, float time, float deltaTime)
 {
+	mat4 m;
+	
 	// set up materials - green 
 	program.sendUniform("material", vec3(0.1f, 0.6f, 0.1f));
-	// Bind (activate) the buffer
-	glBindBuffer(GL_ARRAY_BUFFER, buf);
 
-	// render nearly as usually
-	glEnableClientState(GL_VERTEX_ARRAY);
-	glEnableClientState(GL_NORMAL_ARRAY);
-	glVertexPointer(3, GL_FLOAT, 6 * sizeof(float), 0);
-	glNormalPointer(GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	// Get Attribute Locations
 
-	// Bind (activate) index buffer
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ind);
-	// Draw triangles using 18 indices (unsigned int), starting at number 0
+	GLuint attribVertex = program.getAttribLocation("aVertex");
+
+	GLuint attribNormal = program.getAttribLocation("aNormal");
+
+
+	// Enable vertex attribute arrays
+
+	glEnableVertexAttribArray(attribVertex);
+
+	glEnableVertexAttribArray(attribNormal);
+
+
+	// Bind (activate) the vertex buffer and set the pointer to it
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+
+	glVertexAttribPointer(attribVertex, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+
+	// Bind (activate) the normal buffer and set the pointer to it
+
+	glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+
+	glVertexAttribPointer(attribNormal, 3, GL_FLOAT, GL_FALSE, 0, 0);
+
+
+	// Draw triangles – using index buffer
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+
 	glDrawElements(GL_TRIANGLES, 18, GL_UNSIGNED_INT, 0);
 
-	glDisableClientState(GL_VERTEX_ARRAY);
-	glDisableClientState(GL_NORMAL_ARRAY);
+
+	// Disable arrays
+
+	glDisableVertexAttribArray(attribVertex);
+
+	glDisableVertexAttribArray(attribNormal);
+
 	
-	mat4 m;
+	
 
 	// setup materials - grey
 	program.sendUniform("material", vec3(0.6f, 0.6f, 0.6f));
-
+	
 	// table
 	m = matrixView;
 	m = translate(m, vec3(0.0f, 0, 0.0f));
@@ -161,7 +212,7 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	m = scale(m, vec3(0.004f, 0.004f, 0.004f));
 	table.render(m);
 
-
+	
 
 
 
@@ -199,6 +250,8 @@ void renderScene(mat4& matrixView, float time, float deltaTime)
 	m = rotate(m, radians(0.0f), vec3(0.0f, 1.0f, 0.0f));
 	m = scale(m, vec3(0.05f, 0.05f, 0.05f));
 	Vase.render(m);
+
+	program.sendUniform("matrixModelView", m);
 	
 }
 
